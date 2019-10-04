@@ -39,7 +39,7 @@ spec:
       volumes:
       - name: frontend-conf-volume
         secret:
-          secretName: config-web
+          secretName: config-elc
           items:
           - key: conf
             path: config.ini      
