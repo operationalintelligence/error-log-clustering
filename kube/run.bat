@@ -1,5 +1,5 @@
 REM __create secret with configuration__  
-kubectl create secret -n operational-inteligence generic config-elc --from-file=conf=secrets/config.ini
+kubectl create secret -n operational-intelligence generic config-elc --from-file=conf=secrets/config.ini
 
 REM __deploy service and ingress__  
 kubectl create -f service.yaml

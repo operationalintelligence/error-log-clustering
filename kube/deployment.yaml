@@ -2,7 +2,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: error-log-clustering  
-  namespace: operational-inteligence
+  namespace: operational-intelligence
   labels:
     k8s-app: error-log-clustering
 spec:
