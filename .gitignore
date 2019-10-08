@@ -107,3 +107,4 @@ venv.bak/
 node_modules
 
 .idea/
+/ErrorLogClustering/config-example.ini

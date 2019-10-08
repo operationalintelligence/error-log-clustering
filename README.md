@@ -13,6 +13,7 @@ ES_HOSTS:http://localhost:9200/
 ES_USER:admin
 ES_PASSWORD:123456
 ES_INDEX:my-es-index
+ALLOWED_HOSTS:*
 ```
 ## Requirements
 ```
