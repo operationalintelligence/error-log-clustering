@@ -36,6 +36,7 @@ class LogClustering(View):
         datefmt='%Y-%m-%d %H:%M:%S')
 
     def get(self, request):
+        self.tokenizer = request.GET.get('tokenizer', 'nltk')
         self.w2v_size = int(request.GET.get('w2v_size', 100))
         self.w2v_window = int(request.GET.get('w2v_window', 5))
         self.min_samples = int(request.GET.get('min_samples', 1))
@@ -101,35 +102,29 @@ class LogClustering(View):
             self.errors[idx] = self.remove_whitespaces(_cleaned)
         logging.info("finished")
 
-    def tokenization(self):
+    def tokenization(self, mode='nltk'):
         """
         Tokenization of a list of error messages.
         The best tokenizer for error messages is TreebankWordTokenizer (nltk).
         It's good at tokenizing file paths.
+        Alternative tokenizer. It performs much faster, but worse in tokenizing of paths.
+        It splits all paths by "/".
+        TODO: This method should be optimized to the same tokenization quality as TreebankWordTokenizer
         :param errors:
         :return:
         """
         logging.info("Stage 1: Tokenization was started")
         tokenized = []
-        for line in self.errors:
-            tokenized.append(TreebankWordTokenizer().tokenize(line))
-        logging.info("Stage 1 finished")
+        if mode == 'nltk':
+            for line in self.errors:
+                tokenized.append(TreebankWordTokenizer().tokenize(line))
+            logging.info("Stage 1 finished")
+        elif mode == 'pyonmttok':
+            tokenizer = pyonmttok.Tokenizer("space", joiner_annotate=False, segment_numbers=False)
+            for doc in self.errors:
+                tokens, features = tokenizer.tokenize(doc)
+                tokenized.append(tokens)
         return tokenized
-
-    def pyonmttok_tokenization(self):
-        """
-        Alternative tokenizer. It performs much faster, but worse in tokenizing of paths.
-        It splits all paths by "/".
-        TODO: This method should be optimized to the same tokenization quality as TreebankWordTokenizer
-        :param data:
-        :return:
-        """
-        pyonmttok_tokens = []
-        tokenizer = pyonmttok.Tokenizer("space", joiner_annotate=False, segment_numbers=False)
-        for doc in self.errors:
-            tokens, features = tokenizer.tokenize(doc)
-            pyonmttok_tokens.append(tokens)
-        return pyonmttok_tokens
 
     def tokens_vectorization(self, min_count=1, iter=10):
         """
