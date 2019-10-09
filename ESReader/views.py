@@ -59,6 +59,11 @@ class QueryES(View):
         es_connection = Elasticsearch(hosts=ES_HOSTS)
 
     def get(self, request):
+        self.gte = request.GET.get('gte', '2019-09-01T00:00:00.000Z')
+        self.lte = request.GET.get('lte', '2019-09-02T00:00:00.000Z')
+        self.error_type = request.GET.get('error_type', ['exeerrordiag'])
+        self.page_size = request.GET.get('page_size', 10000)
+
         self.delete_everything()
         query = self.prepare_query(request)
         if query["status"]:
@@ -78,8 +83,8 @@ class QueryES(View):
         raw_query = request.GET.get("query")
         if not raw_query:
             query = {
-                'size': 100000,
-                '_source': ['exeerrordiag'],
+                'size': self.page_size,
+                '_source': self.error_type,
                 'query':{
                     'bool': {
                         'must': [
@@ -87,8 +92,8 @@ class QueryES(View):
                             {
                                 'range': {
                                     'starttime': {
-                                        'gte': '2019-09-01T00:00:00.000Z',
-                                        'lte': '2019-09-02T00:00:00.000Z'
+                                        'gte': self.gte,
+                                        'lte': self.lte
                                     }
                                 }
                             }
