@@ -1,7 +1,8 @@
-from django.urls import path
+from django.urls import path, re_path
 
 from Clustering.views import LogClustering
 
 urlpatterns = [
-    path('process', LogClustering.as_view(), name='get'),
+    re_path(r'^process/$', LogClustering.as_view(), name="get"),
+    # path('process', LogClustering.as_view(), name='get'),
 ]

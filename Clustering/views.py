@@ -36,6 +36,10 @@ class LogClustering(View):
         datefmt='%Y-%m-%d %H:%M:%S')
 
     def get(self, request):
+        self.w2v_size = int(request.GET.get('w2v_size', 100))
+        self.w2v_window = int(request.GET.get('w2v_window', 5))
+        self.min_samples = int(request.GET.get('min_samples', 1))
+
         data = {}
         t0 = time.time()
 
@@ -127,7 +131,7 @@ class LogClustering(View):
             pyonmttok_tokens.append(tokens)
         return pyonmttok_tokens
 
-    def tokens_vectorization(self, size=100, window=5, min_count=1, iter=10):
+    def tokens_vectorization(self, min_count=1, iter=10):
         """
         Training word2vec model
         :param sentences: tokenized sentences (recommended value is 100)
@@ -139,7 +143,7 @@ class LogClustering(View):
         :return:
         """
         logging.info("Stage 2: Word2Vec training started")
-        word2vec = Word2Vec(self.tokenized, size=size, window=window,
+        word2vec = Word2Vec(self.tokenized, size=self.w2v_size, window=self.w2v_window,
                             min_count=min_count, workers=self.cpu_number, iter=iter)
         logging.info("Stage 2 finished")
         return word2vec
@@ -236,7 +240,7 @@ class LogClustering(View):
         :return: DBSCAN labels
         """
         logging.info("Stage 4.3: DBSCAN started")
-        algo = daal4py.dbscan(minObservations=1, epsilon=self.epsilon,
+        algo = daal4py.dbscan(minObservations=self.min_samples, epsilon=self.epsilon,
                               resultsToCompute='computeCoreIndices|computeCoreObservations')
         result = algo.compute(self.sent2vec)
         logging.info("Stage 4.3 finished")
