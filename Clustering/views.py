@@ -25,7 +25,7 @@ from fuzzywuzzy import fuzz
 import pandas as pd
 from django.http import JsonResponse
 from django.views import View
-from CommunicatES.models import Errors
+from ESReader.models import Errors
 
 class LogClustering(View):
 
@@ -34,10 +34,6 @@ class LogClustering(View):
         filename="logs_cluster.log",
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
-    #
-    # def __init__(self, data, **kwargs):
-    #     self.cpu_number = multiprocessing.cpu_count()
-    #     self.errors = data
 
     def get(self, request):
         data = {}

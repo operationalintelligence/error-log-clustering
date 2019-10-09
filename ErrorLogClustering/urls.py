@@ -19,7 +19,7 @@ from .views import execute_clustering
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('communicatES/', include('CommunicatES.urls')),
+    path('read_es/', include('ESReader.urls')),
     path('cluster/', include('Clustering.urls')),
     path('execute/', execute_clustering)
 ]
