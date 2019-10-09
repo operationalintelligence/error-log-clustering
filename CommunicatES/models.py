@@ -1,3 +1,5 @@
 from django.db import models
 
-# Create your models here.
+class Errors(models.Model):
+    error_message = models.CharField(max_length=1000)
+    cluster_label = models.IntegerField(default=0)

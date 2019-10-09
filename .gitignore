@@ -108,3 +108,4 @@ node_modules
 
 .idea/
 /ErrorLogClustering/config-example.ini
+config/

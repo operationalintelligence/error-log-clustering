@@ -15,8 +15,11 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
+from .views import execute_clustering
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('communicatES/', include('CommunicatES.urls')),
+    path('cluster/', include('Clustering.urls')),
+    path('execute/', execute_clustering)
 ]
