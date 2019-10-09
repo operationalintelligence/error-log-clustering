@@ -123,40 +123,10 @@ class QueryES(View):
             scroll_id = result["_scroll_id"]
             hits = result["hits"]["hits"]
             scroll_size = len(hits)
-            print(scroll_size)
             if not hits:
                 break
             for item in hits:
                 yield item["_source"]
-
-    # def scrolling(self, query):
-    #     data = {}
-    #     output_list = []
-    #     response = self.es_connection.search(index=ES_INDEX,
-    #                              body=query,
-    #                              scroll=TIMEOUT,
-    #                              size=STEP_SIZE_DEFAULT)
-    #
-    #     for hit in response['hits']['hits']:
-    #         output_list.append(hit['_source'])
-    #
-    #     size_limit = (STEP_SIZE_DEFAULT or response['hits']['total']) - len(output_list)
-    #     if size_limit:
-    #
-    #         def _scroll_generator(client, scroll_id):
-    #             r = client.scroll(scroll_id=scroll_id, scroll=TIMEOUT)
-    #             while len(r['hits']['hits']) > 0:
-    #                 for item in r['hits']['hits']:
-    #                     yield item
-    #                 r = client.scroll(scroll_id=scroll_id, scroll=TIMEOUT)
-    #
-    #         sid = response['_scroll_id']
-    #
-    #         for hit in _scroll_generator(client=self.es_connection, scroll_id=sid):
-    #             output_list.append(hit['_source'])
-    #             size_limit -= 1
-    #             if not size_limit:
-    #                 break
 
     @track_error
     def get_from_es(self, query):
