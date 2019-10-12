@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+    <h5>Unsupervised Error Log Clusterization for ATLAS Computing</h5>
+
+    <div class="card bg-white mb-3" style="max-width: 100rem;">
+  <div class="card-header">Introduction</div>
+  <div class="card-body">
+    <h5 class="card-title">Key Objectives of the Research</h5>
+    <p class="card-text">During the last decade, data centers and computer networks have grown significantly in processing power, size, and complexity. Large-scale distributed systems are widespread, supporting millions of concurrent users from various application areas. This type of infrastructure provides common, friendly and flexible interfaces, but also is subject to many dynamic failures. Error logs are a fruitful source of information both for diagnosis as well as for proactive fault handling [10] – however the large size and complexity of these systems makes diagnosing failures a challenging problem [4]. As a result, organizations commonly have to handle many gigabytes of log data on a daily basis. [estimate the number of error logs in ATLAS PanDA] [1]. Network faults, service failures, security incidents, and other error conditions often trigger log messages which provide detailed error information to system administrators [3].
+In order to analyze large amounts of textual log data without well-defined structure, several data mining methods have been proposed in the past which focus on the detection of line patterns from textual event logs [1]. However, such tools assume that human experts interpret detected knowledge and create the rules (patterns or regular expressions) manually which is time-consuming and expensive [3]. This approach does not allow to identify previously unknown error conditions.
+</p>
+  </div>
+</div>
+
+{% endblock content %}

@@ -15,11 +15,13 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .views import execute_clustering
+from .views import main
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('read_es/', include('ESReader.urls')),
     path('cluster/', include('Clustering.urls')),
-    path('execute/', execute_clustering)
+    # path('', main),
+    path('', main, name="main"),
+    # path('reader_form', reader_form, name='reader_form')
 ]

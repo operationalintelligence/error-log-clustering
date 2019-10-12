@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block input_form %}
+      <h4>Upload Error Messages from ES@Chicago</h4>
+      <form action="" method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="form-group-sm">
+            {{ form.start_date.errors }}
+            <label for="{{ form.start_date.id_for_label }}">Start from:</label>
+            <input name="{{ form.start_date.html_name }}" id="starts_from" class="form-control form-control-sm flatpickr flatpickr-input active" type="text" placeholder="{{ form.start_date.value }}" readonly="readonly">
+        </div>
+        <div class="form-group-sm">
+            {{ form.end_date.errors }}
+            <label for="{{ form.end_date.id_for_label }}">Ends with:</label>
+            <input name="{{ form.end_date.html_name }}" id="ends_with" class="form-control form-control-sm flatpickr flatpickr-input active" type="text" placeholder="{{ form.end_date.value }}" readonly="readonly">
+        </div>
+        <div class="form-group-sm">
+            {{ form.error_type.errors }}
+            <label for="{{ form.error_type.id_for_label }}">Error type:</label>
+            <input name="{{ form.error_type.html_name }}" class="form-control form-control-sm" type="text" placeholder="{{ form.error_type.value }}">
+        </div>
+        <div class="form-group-sm">
+            {{ form.page_size.errors }}
+            <label for="{{ form.page_size.id_for_label }}">Page size</label>
+            <input name="{{ form.page_size.html_name }}" class="form-control form-control-sm" type="text" placeholder="{{ form.page_size.value }}">
+        </div>
+          <br/>
+          <br/>
+        <button type="submit" value="Submit" class="btn btn-primary mb-2">Upload data</button>
+       </form>
+            <script>
+                $(document).ready(function() {
+                    $('#starts_from').flatpickr({
+                        enableTime: true,
+                        nocalendar: true,
+                        dateFormat: 'Z',
+                        time_24hr: true
+                    });
+                    $('#ends_with').flatpickr({
+                        enableTime: true,
+                        nocalendar: true,
+                        dateFormat: 'Z',
+                        time_24hr: true
+                    });
+                });
+        </script>
+{% endblock input_form %}
+
+{% block content %}
+{% if submitted == True %}
+        <script>
+        $(document).ready(function() {
+            var data = {{ es_data|safe }};
+            function getColumns(){
+              for(var i = 0; i < data.length; i++){
+                let columnsArray = [];
+                var keys = Object.keys(data[i]);
+                for(k in Object.keys(data[i])){
+                  if(data[i].hasOwnProperty(keys[k])){
+                    columnsArray.push({
+                        "data":keys[k]
+                    });
+                  }
+                }
+                return columnsArray;
+              }
+            }
+
+            $('#my-table').dataTable({
+                "columns": getColumns(),
+                "data": data,
+                "responsive": true,
+                "scrollX": true
+            });
+        });
+        </script>
+    {% endif %}
+        <h5>Uploaded Data:</h5>
+            <table id="my-table" class="table table-sm" width="100%">
+    <thead>
+    <th>pandaid</th>
+    <th>modificationtime</th>
+    <th>error_type</th>
+    <th>error_code</th>
+    <th>error_message</th>
+    <th>tolkenized</th>
+    <th>cluster_label</th>
+    </thead>
+    <tbody></tbody>
+    </table>
+    {% endblock content %}
+

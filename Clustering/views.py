@@ -1,8 +1,5 @@
 from django.shortcuts import render
 
-import json
-import os
-import sys
 import numpy as np
 from kneed import KneeLocator
 import nltk
@@ -17,7 +14,6 @@ import daal4py
 import re
 import time
 import logging
-from statistics import mean, stdev
 import matplotlib.pyplot as plt
 import multiprocessing
 from statistics import mean, stdev
@@ -26,8 +22,28 @@ import pandas as pd
 from django.http import JsonResponse
 from django.views import View
 from ESReader.models import Errors
+from .forms import ClusterizationParams
+
+
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+        if 'log_time' in kw:
+            name = kw.get('log_name', method.__name__.upper())
+            kw['log_time'][name] = int((te - ts) * 1000)
+        else:
+            logging.info('%r  %2.2f ms' % (method.__name__, (te - ts) * 1000))
+        return result
+
+    return timed
 
 class LogClustering(View):
+
+    template_name = 'clustering.html'
+    form_class = ClusterizationParams
+    success_url = 'cluster'
 
     logging.basicConfig(
         format='%(asctime)s %(levelname)-8s %(message)s',
@@ -35,33 +51,46 @@ class LogClustering(View):
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
 
-    def get(self, request):
-        self.tokenizer = request.GET.get('tokenizer', 'nltk')
-        self.w2v_size = int(request.GET.get('w2v_size', 100))
-        self.w2v_window = int(request.GET.get('w2v_window', 5))
-        self.min_samples = int(request.GET.get('min_samples', 1))
 
-        data = {}
-        t0 = time.time()
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name, {'form': self.form_class})
 
-        self.cpu_number = multiprocessing.cpu_count()
-        errors = Errors.objects.values_list('error_message', flat=True)
-        self.errors = list(errors)
-        self.tokenized = self.data_preparation()
-        self.word2vec = self.tokens_vectorization()
-        self.sent2vec = self.sentence_vectorization()
-        self.tuning_parameters()
-        self.cluster_labels = self.dbscan()
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if request.POST.get("submitted"):
+            return render(request, self.template_name, {'form': form})
+        if form.is_valid():
+            self.tokenizer = form.cleaned_data['tokenizer']
+            self.w2v_size = form.cleaned_data['w2v_size']
+            self.w2v_window = form.cleaned_data['w2v_window']
+            self.min_samples = form.cleaned_data['min_samples']
 
-        t1 = time.time()
-        logging.info("Total time: {}".format(t1-t0))
+            data = {}
+            t0 = time.time()
 
-        self.save()
+            self.cpu_number = multiprocessing.cpu_count()
+            errors = Errors.objects.values_list('error_message', flat=True)
+            self.errors = list(errors)
+            self.tokenized = self.data_preparation()
+            self.word2vec = self.tokens_vectorization()
+            self.sent2vec = self.sentence_vectorization()
+            self.tuning_parameters()
+            self.cluster_labels = self.dbscan()
 
-        self.model = list(Errors.objects.all().values())
-        data["clustered"] = self.clustered_errors()
+            t1 = time.time()
+            logging.info("Total time: {}".format(t1 - t0))
 
-        return JsonResponse(data)
+            self.model = list(Errors.objects.all().values())
+            output_data = ['pandaid', 'error_message', 'modificationtime', 'error_code']
+            data["clustered"] = self.clustered(output_data)
+
+            data["statistics"] = self.cluster_statistics()
+
+            data['submitted'] = True
+            data['form'] = form
+            return render(request, self.template_name, data)
+
+        return render(request, self.template_name, {'form': form})
 
     def data_preparation(self):
         self.clear_strings()
@@ -81,6 +110,7 @@ class LogClustering(View):
         """
         return " ".join(sentence.split())
 
+    @timeit
     def clear_strings(self):
         """
         Clear error messages from unnecessary data:
@@ -90,7 +120,6 @@ class LogClustering(View):
         :param data:
         :return:
         """
-        logging.info("strings preparation is started")
         _uid = r'[0-9a-zA-Z]{12,128}'
         _line_number = r'(at line[:]*\s*\d+)'
         _uuid = r'[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89aAbB][a-f0-9]{3}-[a-f0-9]{12}'
@@ -100,8 +129,8 @@ class LogClustering(View):
             _cleaned = re.sub(_uid, "UID", _cleaned)
             _cleaned = re.sub(_uuid, "UUID", _cleaned)
             self.errors[idx] = self.remove_whitespaces(_cleaned)
-        logging.info("finished")
 
+    @timeit
     def tokenization(self, mode='nltk'):
         """
         Tokenization of a list of error messages.
@@ -113,7 +142,6 @@ class LogClustering(View):
         :param errors:
         :return:
         """
-        logging.info("Stage 1: Tokenization was started")
         tokenized = []
         if mode == 'nltk':
             for line in self.errors:
@@ -126,6 +154,7 @@ class LogClustering(View):
                 tokenized.append(tokens)
         return tokenized
 
+    @timeit
     def tokens_vectorization(self, min_count=1, iter=10):
         """
         Training word2vec model
@@ -137,12 +166,11 @@ class LogClustering(View):
         :param iter: (recommended value is 10)
         :return:
         """
-        logging.info("Stage 2: Word2Vec training started")
         word2vec = Word2Vec(self.tokenized, size=self.w2v_size, window=self.w2v_window,
                             min_count=min_count, workers=self.cpu_number, iter=iter)
-        logging.info("Stage 2 finished")
         return word2vec
 
+    @timeit
     def sentence_vectorization(self):
         """
         Calculates mathematical average of the word vector representations
@@ -151,7 +179,6 @@ class LogClustering(View):
         :param model: word2vec model
         :return:
         """
-        logging.info("Stage 3: Sentence2Vec started")
         sent2vec = []
         for sent in self.tokenized:
             sent_vec = []
@@ -167,16 +194,15 @@ class LogClustering(View):
                     pass
 
             sent2vec.append(np.asarray(sent_vec) / numw)
-        logging.info("Stage 3 finished")
         return np.array(sent2vec)
 
+    @timeit
     def kneighbors(self):
         """
         Calculates average distances for k-nearest neighbors
         :param X:
         :return:
         """
-        logging.info("Stage 4.1: K-neighbors distances started")
         k = round(math.sqrt(len(self.sent2vec)))
         neigh = NearestNeighbors(n_neighbors=k)
         nbrs = neigh.fit(self.sent2vec)
@@ -190,15 +216,14 @@ class LogClustering(View):
         else:
             return distances[:, 1]
 
+    @timeit
     def epsilon_search(self):
         """
         Search epsilon for DBSCAN
         :param distances:
         :return:
         """
-        logging.info("Stage 4.2: Epsilon search started")
         kneedle = KneeLocator(self.distances, list(range(len(self.distances))))
-        logging.info("Stage 4.2 finished")
         if len(kneedle.all_elbows)>0:
             return max(kneedle.all_elbows)
         else:
@@ -227,6 +252,7 @@ class LogClustering(View):
             plt.legend()
             plt.savefig("distance_curve.png")
 
+    @timeit
     def dbscan(self):
         """
         DBSCAN clusteing with daal4py library
@@ -234,11 +260,9 @@ class LogClustering(View):
         :param epsilon:
         :return: DBSCAN labels
         """
-        logging.info("Stage 4.3: DBSCAN started")
         algo = daal4py.dbscan(minObservations=self.min_samples, epsilon=self.epsilon,
                               resultsToCompute='computeCoreIndices|computeCoreObservations')
         result = algo.compute(self.sent2vec)
-        logging.info("Stage 4.3 finished")
         return result.assignments[:, 0].tolist()
 
     def save(self):
@@ -248,13 +272,43 @@ class LogClustering(View):
             obj.cluster_label = self.cluster_labels[idx]
             obj.save()
 
+    def clustered(self, output_data):
+        """
+        Returns dictionary of clusters with the arrays of elements
+        :return:
+        """
+        values_list = []
+        for item in output_data:
+            values_list.append(Errors.objects.values_list(item, flat=True))
+        clusters = {}
+        for label in set(self.cluster_labels):
+            rows = []
+            for idx, l in enumerate(self.cluster_labels):
+                if l == label:
+                    elements = {}
+                    for i, item in enumerate(output_data):
+                        elements[item] = values_list[i][idx]
+                    rows.append(elements)
+            clusters[label] = rows
+        return clusters
+
     def clustered_errors(self):
+        """
+        Returns dictionary of clusters with the arrays of error messages:
+        {
+            "1": [100, 101, 102, ...],
+            "2": [400, 405, 106, ...],
+            ...
+        }
+        :return:
+        """
+        error_messages = Errors.objects.values_list('error_message', flat=True)
         results = {}
         for label in set(self.cluster_labels):
             elements = []
             for idx, l in enumerate(self.cluster_labels):
                 if l == label:
-                    elements.append(self.errors[idx])
+                    elements.append(error_messages[idx])
             results[label] = elements
         return results
 
@@ -267,13 +321,14 @@ class LogClustering(View):
 
     def cluster_statistics(self):
         clusters = []
-        for item in self.clustered_errors:
+        self.clustered_messages = self.clustered_errors()
+        for item in self.clustered_messages:
             cluster = {}
             cluster["cluster_name"] = item
-            cluster["first_entry"] = self.clustered_errors[item][0]
-            cluster["cluster_size"] = len(self.clustered_errors[item])
+            cluster["first_entry"] = self.clustered_messages[item][0]
+            cluster["cluster_size"] = len(self.clustered_messages[item])
             lengths = []
-            for s in self.clustered_errors[item]:
+            for s in self.clustered_messages[item]:
                 lengths.append(len(s))
             mean_length = mean(lengths)
             try:
@@ -282,10 +337,10 @@ class LogClustering(View):
                 std_length = 0
             cluster["mean_length"] = mean_length
             cluster["std_lengt"] = std_length
-            x0 = self.clustered_errors[item][0]
+            x0 = self.clustered_messages[item][0]
             dist = []
-            for i in range(0, len(self.clustered_errors[item])):
-                x = self.clustered_errors[item][i]
+            for i in range(0, len(self.clustered_messages[item])):
+                x = self.clustered_messages[item][i]
                 dist.append(fuzz.ratio(x0, x))
             cluster["mean_similarity"] = mean(dist)
             try:
@@ -293,5 +348,46 @@ class LogClustering(View):
             except:
                 cluster["std_similarity"] = 0
             clusters.append(cluster)
-        clusters_df = pd.DataFrame(clusters)
-        return clusters_df.sort_values(by=['mean_similarity'])
+        clusters_df = pd.DataFrame(clusters).round(2)
+        return clusters_df.sort_values(by=['mean_similarity']).T.to_dict()
+
+class LogClusteringService(LogClustering):
+
+    def get(self, request):
+
+        self.cpu_number = multiprocessing.cpu_count()
+        self.tokenizer = request.GET.get('tokenizer', 'nltk')
+        self.w2v_size = int(request.GET.get('w2v_size', 100))
+        self.w2v_window = int(request.GET.get('w2v_window', 5))
+        self.min_samples = int(request.GET.get('min_samples', 1))
+
+        data = {}
+
+        data['settings'] = {'cpu_number': self.cpu_number,
+                            'tokenizer': self.tokenizer,
+                            'w2v_size': self.w2v_size,
+                            'w2v_window': self.w2v_window,
+                            'min_samples': self.min_samples}
+
+        errors = Errors.objects.values_list('error_message', flat=True)
+        self.errors = list(errors)
+        t0 = time.time()
+        self.tokenized = self.data_preparation()
+        self.word2vec = self.tokens_vectorization()
+        self.sent2vec = self.sentence_vectorization()
+        self.tuning_parameters()
+        self.cluster_labels = self.dbscan()
+
+        t1 = time.time()
+
+        logging.info("Total time: {}".format(t1-t0))
+
+        self.model = list(Errors.objects.all().values())
+        output_data = ['pandaid']
+        updated_dict = {}
+        results = self.clustered(output_data)
+        for key in results:
+            updated_dict[key] = [i['pandaid'] for i in results[key]]
+        data["clustered"] = updated_dict
+
+        return JsonResponse(data)

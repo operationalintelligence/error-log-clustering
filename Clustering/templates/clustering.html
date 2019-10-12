@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block input_form %}
+      <h4>Unsupervized Clusterization</h4>
+      <form action="" method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <div class="form-group-sm">
+            {{ form.tokenizer.errors }}
+            <label for="{{ form.tokenizer.id_for_label }}">Tokenizer:</label>
+            <input name="{{ form.tokenizer.html_name }}" id="tokenizer" type="text" placeholder="{{ form.tokenizer.value }}">
+        </div>
+        <div class="form-group-sm">
+            {{ form.w2v_size.errors }}
+            <label for="{{ form.w2v_size.id_for_label }}">Word2Vec Model Embedding Size:</label>
+            <input name="{{ form.w2v_size.html_name }}" id="w2v_size" type="text" placeholder="{{ form.w2v_size.value }}">
+        </div>
+        <div class="form-group-sm">
+            {{ form.w2v_window.errors }}
+            <label for="{{ form.w2v_window.id_for_label }}">w2v_window:</label>
+            <input name="{{ form.w2v_window.html_name }}" class="form-control form-control-sm" type="text" placeholder="{{ form.w2v_window.value }}">
+        </div>
+        <div class="form-group-sm">
+            {{ form.min_samples.errors }}
+            <label for="{{ form.min_samples.id_for_label }}">min_samples</label>
+            <input name="{{ form.min_samples.html_name }}" class="form-control form-control-sm" type="text" placeholder="{{ form.min_samples.value }}">
+        </div>
+          <br/>
+          <br/>
+        <button type="submit" value="Submit" class="btn btn-primary mb-2">Clusterize Errors</button>
+       </form>
+    {% endblock input_form %}
+{% block content %}
+        {% if submitted == True %}
+        <h5>Clusters Statistics:</h5>
+            <table id="statistics" class="table table-sm">
+                <thead>
+                    <th>Cluster Name</th>
+                    <th>First Entry</th>
+                    <th>Cluster Size</th>
+                    <th>Average Length of Error Messages</th>
+                    <th>Std Length of Error Messages</th>
+                    <th>Average Similarity</th>
+                    <th>Std Similarity</th>
+                </thead>
+                <tbody>
+                </tbody>
+            </table>
+            <h5>Select Cluster:</h5>
+            <nav aria-label="Page navigation example">
+            <ul class="pagination" id="clusters">
+              </ul>
+            </nav>
+            <h5>Error Messages in selected cluster:</h5>
+            <table id="cluster-results" class="table table-sm">
+                <thead>
+                    <th>pandaid</th>
+                    <th>error_message</th>
+                    <th>modificationtime</th>
+                    <th>error_code</th>
+                </thead>
+                <tbody>
+
+                </tbody>
+            </table>
+        <script>
+        $(document).ready(function() {
+            var data = {{ clustered|safe }};
+            var statistics = {{ statistics|safe }};
+            var cluster_table = $('#cluster-results').DataTable({});
+            var statistics_values = [];
+            for (var key in statistics) {
+                statistics_values.push(Object.values(statistics[key]));
+            }
+            var statistics_table = $('#statistics').DataTable({
+                "data": statistics_values
+            });
+            $.each(data,function(key,value){
+                var li = document.createElement("li");
+                li.setAttribute('id',key);
+                li.classList.add('page-item');
+                var a = document.createElement('a');
+                a.classList.add('page-link');
+                a.href = '#';
+                a.innerHTML = key;
+                a.error_logs = data;
+                li.appendChild(a);
+                $('#clusters').append(li);
+                a.onclick = function(event) {
+                    event.preventDefault();
+                    cluster_table.clear();
+                    // Create DataTable for current cluster elements
+                    var cluster_id = event.target.innerHTML;
+                    var current_cluster = event.target.error_logs[cluster_id];
+                    for (var i in current_cluster) {
+                        var list = []
+                        for (var key in current_cluster[i])
+                            list.push(current_cluster[i][key]);
+                        cluster_table.row.add(list)
+                    }
+                    cluster_table.draw();
+                };
+            });
+
+        });
+        </script>
+    {% endif %}
+{% endblock content %}

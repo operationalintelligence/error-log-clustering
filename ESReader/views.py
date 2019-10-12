@@ -5,6 +5,13 @@ import sys
 from django.views import View
 from django.http import JsonResponse
 from elasticsearch import Elasticsearch
+from django.http import HttpResponseRedirect
+from django.shortcuts import render, render_to_response
+from django.shortcuts import redirect
+from django.http import HttpResponse
+from django.views.generic.edit import FormView
+from .forms import ESReaderForm
+import json
 
 
 from ErrorLogClustering.settings import ES_HOSTS, ES_USER, ES_PASSWORD, ES_INDEX, DEBUG
@@ -12,6 +19,7 @@ from .models import Errors
 
 STEP_SIZE_DEFAULT = 1000
 TIMEOUT = '20m'
+
 
 def track_error(func):
 
@@ -58,23 +66,43 @@ class QueryES(View):
     else:
         es_connection = Elasticsearch(hosts=ES_HOSTS)
 
-    def get(self, request):
-        self.gte = request.GET.get('gte', '2019-09-01T00:00:00.000Z')
-        self.lte = request.GET.get('lte', '2019-09-02T00:00:00.000Z')
-        self.error_type = request.GET.get('error_type', ['exeerrordiag'])
-        self.page_size = request.GET.get('page_size', 10000)
+    template_name = 'reader.html'
+    form_class = ESReaderForm
+    success_url = 'search'
 
-        self.delete_everything()
-        query = self.prepare_query(request)
-        if query["status"]:
-            es_data = []
-            for entry in self.scrolling(query=query["body"]):
-                es_data.append(entry)
-            data = self.process_data(es_data=es_data)
-        else:
-            data = query
+    def get(self, request, *args, **kwargs):
+        return render(request, self.template_name, {'form': self.form_class})
 
-        return JsonResponse(data)
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if request.POST.get("submitted"):
+            return render(request, self.template_name, {'form': form})
+        if form.is_valid():
+            self.gte = form.cleaned_data['start_date']
+            self.lte = form.cleaned_data['end_date']
+            self.error_type = form.cleaned_data['error_type']
+            self.page_size = form.cleaned_data['page_size']
+
+            self.delete_everything()
+            query = self.prepare_query(request)
+            print(query)
+            if query["status"]:
+                es_data = []
+                for entry in self.scrolling(query=query["body"]):
+                    es_data.append(entry)
+                print(es_data)
+                data = self.process_data(es_data=es_data)
+            else:
+                data = query
+
+            data['reader_form'] = form.cleaned_data
+            data['form'] = form
+            data['submitted'] = True
+            print(data)
+            # return JsonResponse(data)
+            return render(request, self.template_name, data)
+
+        return render(request, self.template_name, {'form': form})
 
     @track_error
     def prepare_query(self, request):
@@ -84,10 +112,15 @@ class QueryES(View):
         if not raw_query:
             query = {
                 'size': self.page_size,
-                '_source': self.error_type,
+                '_source': ['pandaid', 'starttime', self.error_type+'code', self.error_type+'diag'],
                 'query':{
                     'bool': {
                         'must': [
+                            {
+                                "exists": {
+                                    "field": self.error_type+'diag'
+                                }
+                            },
                             {'term': {'jobstatus': 'failed'}},
                             {
                                 'range': {
@@ -101,6 +134,7 @@ class QueryES(View):
                     }
                 }
             }
+            print(query)
         else:
             query = json.loads(raw_query)
 
@@ -152,16 +186,34 @@ class QueryES(View):
     @track_error
     def process_data(self, es_data):
         data = {}
-        errors = []
-        for dic in es_data:
-            for val in dic.values():
-                errors.append(val)
-        errors = list(filter(None, errors))
-        data["es_data"] = errors
-        for i in errors:
-            p = Errors.objects.create(error_message=i)
-            p.save()
+        for item in es_data:
+            m = Errors.objects.create(pandaid = item['pandaid'],
+                                      modificationtime = item['starttime'],
+                                      error_type = self.error_type,
+                                      error_code = item[self.error_type+'code'],
+                                      error_message = item[self.error_type+'diag'])
+            m.save()
+            data["es_data"] = [entry for entry in Errors.objects.all().values()]
         return data
 
     def delete_everything(self):
         Errors.objects.all().delete()
+
+class DirectESReader(QueryES):
+
+    def get(self, request, *args, **kwargs):
+        if request.method == "GET":
+            self.gte = request.GET.get('gte', '2019-09-01T00:00:00.000Z')
+            self.lte = request.GET.get('lte', '2019-09-01T05:00:00.000Z')
+            self.error_type = request.GET.get('error_type', 'exeerror')
+            self.page_size = request.GET.get('page_size', 10000)
+            self.delete_everything()
+            query = self.prepare_query(request)
+            if query["status"]:
+                es_data = []
+                for entry in self.scrolling(query=query["body"]):
+                    es_data.append(entry)
+                data = self.process_data(es_data=es_data)
+            else:
+                data = query
+            return JsonResponse(data)

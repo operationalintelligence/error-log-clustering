@@ -11,12 +11,13 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
+from os.path import join, dirname
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # Reading config
-config_path = "/usr/src/app/config/config.ini"
+config_path = "config/config.ini"
 with open(config_path, "r", encoding="utf-8") as file:
     content = ["".join(line.split()) for line in file.readlines() if line]
     config = {key: value for key, value in [(line.split(":")[0], ":".join(line.split(":")[1:])) for line in content]}
@@ -50,7 +51,8 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'CommunicatES.apps.CommunicatesConfig',
+    'ESReader.apps.ESReaderConfig',
+    'Clustering.apps.ClusteringConfig'
 ]
 
 MIDDLEWARE = [
@@ -131,5 +133,9 @@ USE_TZ = True
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
+STATIC_URL = '/static/' # the path in url
 
-STATIC_URL = '/static/'
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, "static"),
+]
+

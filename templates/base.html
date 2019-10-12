@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    {% include "styles.html" %}
+    {% include "scripts.html" %}
+</head>
+<body>
+
+{% block navbars %}
+    {% include "navigation.html" %}
+{% endblock navbars %}
+<main role="main" class="container">
+{#<div class="container-fluid">#}
+  <div class="row">
+    <div class="col-sm-6">
+        {% block input_form %}
+        {% endblock input_form %}
+    </div>
+    <div class="col-sm-6">
+    </div>
+  </div>
+    <div class="row">
+        <div class="col-sm">
+            {% block content %}
+            {% endblock content %}
+        </div>
+    </div>
+{#</div>#}
+</main>
+</body>
+</html>
