@@ -1,15 +1,42 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block content %}
-    <h5>Unsupervised Error Log Clusterization for ATLAS Computing</h5>
-
+<br/>
     <div class="card bg-white mb-3" style="max-width: 100rem;">
-  <div class="card-header">Introduction</div>
+  <div class="card-header">
+      <h5>Unsupervised Error Log Clusterization for ATLAS Computing</h5>
+  </div>
   <div class="card-body">
     <h5 class="card-title">Key Objectives of the Research</h5>
-    <p class="card-text">During the last decade, data centers and computer networks have grown significantly in processing power, size, and complexity. Large-scale distributed systems are widespread, supporting millions of concurrent users from various application areas. This type of infrastructure provides common, friendly and flexible interfaces, but also is subject to many dynamic failures. Error logs are a fruitful source of information both for diagnosis as well as for proactive fault handling [10] – however the large size and complexity of these systems makes diagnosing failures a challenging problem [4]. As a result, organizations commonly have to handle many gigabytes of log data on a daily basis. [estimate the number of error logs in ATLAS PanDA] [1]. Network faults, service failures, security incidents, and other error conditions often trigger log messages which provide detailed error information to system administrators [3].
-In order to analyze large amounts of textual log data without well-defined structure, several data mining methods have been proposed in the past which focus on the detection of line patterns from textual event logs [1]. However, such tools assume that human experts interpret detected knowledge and create the rules (patterns or regular expressions) manually which is time-consuming and expensive [3]. This approach does not allow to identify previously unknown error conditions.
+    <p class="card-text">During the last decade, data centers and computer networks have grown significantly in processing power, size, and complexity. Large-scale distributed systems are widespread, supporting millions of concurrent users from various application areas. This type of infrastructure provides common, friendly and flexible interfaces, but also is subject to many dynamic failures. Error logs are a fruitful source of information both for diagnosis as well as for proactive fault handling – however the large size and complexity of these systems makes diagnosing failures a challenging problem. As a result, organizations commonly have to handle many gigabytes of log data on a daily basis. Network faults, service failures, security incidents, and other error conditions often trigger log messages which provide detailed error information to system administrators.</p>
+      <p>
+In order to analyze large amounts of textual log data without well-defined structure, several data mining methods have been proposed in the past which focus on the detection of line patterns from textual event logs. However, such tools assume that human experts interpret detected knowledge and create the rules (patterns or regular expressions) manually which is time-consuming and expensive. This approach does not allow to identify previously unknown error conditions.
 </p>
+      <p>Possible solution is to cluster log errors using methods of unsupervized text clusterization.</p>
+      <h5 class="card-title">Requirements</h5>
+    <p class="card-text">
+        <ul>
+      <li>Performance, suitable for the real-time applications</li>
+      <li>Unknown number of clusters</li>
+      <li>Capture outliers (previously unknown errors conditions)</li>
+      <li>Minimization of human intervention in the process of clusterization (automatic detection of clusterization parameters)</li>
+      </ul>
+    </p>
+      <h5>Error Log Clusterization Pipeline</h5>
+      <p class="card-text">
+          <img src="{% static "img/cluster_pipeline.png" %}" width="60%"/>
+      </p>
+      <h5>Resources</h5>
+      <p class="card-text">
+          <ul>
+      <li>Word Embeddings - http://colah.github.io/posts/2014-07-NLP-RNNs-Representations</li>
+      <li>Word2Vec - https://github.com/RaRe-Technologies/gensim</li>
+      <li>Intel DAAL - https://software.intel.com/en-us/daal</li>
+      <li>Kneed - https://github.com/arvkevi/kneed</li>
+      <li>ANN library - http://www.cs.umd.edu/~mount/ANN/</li>
+        </ul>
+      </p>
   </div>
 </div>
 

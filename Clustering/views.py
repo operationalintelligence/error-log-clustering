@@ -1,5 +1,6 @@
 from django.shortcuts import render
-
+import sys
+import os
 import numpy as np
 from kneed import KneeLocator
 import nltk
@@ -23,6 +24,45 @@ from django.http import JsonResponse
 from django.views import View
 from ESReader.models import Errors
 from .forms import ClusterizationParams
+from ErrorLogClustering.settings import DEBUG
+
+
+def safe_run(func):
+
+    def wrapped(*args, **kwargs):
+        data = {
+            "status": True,
+            "message": "Everything is fine!"
+        }
+
+        try:
+            data.update(func(*args, **kwargs))
+        except Exception as error:
+            if DEBUG:
+                exc_type, exc_obj, exc_tb = sys.exc_info()
+                file_name = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+                message = {
+                    "error": str(error),
+                    "type": str(exc_type),
+                    "filename": str(file_name),
+                    "line_number": exc_tb.tb_lineno
+                }
+            else:
+                message = {
+                    "error": "Something went wrong on server side, your request failed!",
+                    "type": "",
+                    "filename": "",
+                    "line_number": 0
+                }
+
+            data = {
+                "status": False,
+                "message": message
+            }
+
+        return data
+
+    return wrapped
 
 
 def timeit(method):
@@ -51,7 +91,6 @@ class LogClustering(View):
         level=logging.INFO,
         datefmt='%Y-%m-%d %H:%M:%S')
 
-
     def get(self, request, *args, **kwargs):
         return render(request, self.template_name, {'form': self.form_class})
 
@@ -69,7 +108,9 @@ class LogClustering(View):
             t0 = time.time()
 
             self.cpu_number = multiprocessing.cpu_count()
-            errors = Errors.objects.values_list('error_message', flat=True)
+            if request.session._SessionBase__session_key is not None:
+                session_id = request.session._SessionBase__session_key
+            errors = Errors.objects.filter(session_id=session_id).values_list('error_message', flat=True)
             self.errors = list(errors)
             self.tokenized = self.data_preparation()
             self.word2vec = self.tokens_vectorization()
@@ -170,6 +211,7 @@ class LogClustering(View):
                             min_count=min_count, workers=self.cpu_number, iter=iter)
         return word2vec
 
+
     @timeit
     def sentence_vectorization(self):
         """
@@ -196,6 +238,7 @@ class LogClustering(View):
             sent2vec.append(np.asarray(sent_vec) / numw)
         return np.array(sent2vec)
 
+
     @timeit
     def kneighbors(self):
         """
@@ -215,6 +258,7 @@ class LogClustering(View):
             return avg_distances
         else:
             return distances[:, 1]
+
 
     @timeit
     def epsilon_search(self):
@@ -252,6 +296,7 @@ class LogClustering(View):
             plt.legend()
             plt.savefig("distance_curve.png")
 
+
     @timeit
     def dbscan(self):
         """
@@ -265,12 +310,14 @@ class LogClustering(View):
         result = algo.compute(self.sent2vec)
         return result.assignments[:, 0].tolist()
 
+
     def save(self):
         errors = Errors.objects.all()
         logging.info(errors)
         for idx, obj in enumerate(errors):
             obj.cluster_label = self.cluster_labels[idx]
             obj.save()
+
 
     def clustered(self, output_data):
         """
@@ -292,6 +339,7 @@ class LogClustering(View):
             clusters[label] = rows
         return clusters
 
+
     def clustered_errors(self):
         """
         Returns dictionary of clusters with the arrays of error messages:
@@ -312,12 +360,14 @@ class LogClustering(View):
             results[label] = elements
         return results
 
+
     def errors_in_cluster(self, cluster_label):
         results = []
         for idx, l in enumerate(self.cluster_labels):
             if l == cluster_label:
                 results.append(self.errors[idx])
         return results
+
 
     def cluster_statistics(self):
         clusters = []
@@ -369,7 +419,10 @@ class LogClusteringService(LogClustering):
                             'w2v_window': self.w2v_window,
                             'min_samples': self.min_samples}
 
-        errors = Errors.objects.values_list('error_message', flat=True)
+        if request.session._SessionBase__session_key is not None:
+            session_id = request.session._SessionBase__session_key
+
+        errors = Errors.objects.filter(session_id==session_id).values_list('error_message', flat=True)
         self.errors = list(errors)
         t0 = time.time()
         self.tokenized = self.data_preparation()
@@ -382,7 +435,7 @@ class LogClusteringService(LogClustering):
 
         logging.info("Total time: {}".format(t1-t0))
 
-        self.model = list(Errors.objects.all().values())
+        self.model = list(Errors.objects.filter(session_id==session_id).values())
         output_data = ['pandaid']
         updated_dict = {}
         results = self.clustered(output_data)

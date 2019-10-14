@@ -1,19 +1,11 @@
-import json
 import os
 import sys
-
 from django.views import View
 from django.http import JsonResponse
 from elasticsearch import Elasticsearch
-from django.http import HttpResponseRedirect
-from django.shortcuts import render, render_to_response
-from django.shortcuts import redirect
-from django.http import HttpResponse
-from django.views.generic.edit import FormView
+from django.shortcuts import render
 from .forms import ESReaderForm
 import json
-
-
 from ErrorLogClustering.settings import ES_HOSTS, ES_USER, ES_PASSWORD, ES_INDEX, DEBUG
 from .models import Errors
 
@@ -68,12 +60,24 @@ class QueryES(View):
 
     template_name = 'reader.html'
     form_class = ESReaderForm
-    success_url = 'search'
+    model = Errors
 
     def get(self, request, *args, **kwargs):
-        return render(request, self.template_name, {'form': self.form_class})
+        if request.session._SessionBase__session_key is not None:
+            data = self.get_data(request.session._SessionBase__session_key)
+            if data['status'] == True:
+                data['reader_form'] = request.session.get('reader_form')
+                data['submitted'] = True
+                print(data)
+                print(request.session._SessionBase__session_key)
+                return render(request, self.template_name, data)
+            else:
+                return render(request, self.template_name, {'form': self.form_class()})
+        else:
+            return render(request, self.template_name, {'form': self.form_class()})
 
     def post(self, request, *args, **kwargs):
+        print(request.session.__dict__)
         form = self.form_class(request.POST)
         if request.POST.get("submitted"):
             return render(request, self.template_name, {'form': form})
@@ -82,24 +86,24 @@ class QueryES(View):
             self.lte = form.cleaned_data['end_date']
             self.error_type = form.cleaned_data['error_type']
             self.page_size = form.cleaned_data['page_size']
+            session_id = request.session._SessionBase__session_key
+            self.delete_data_for_session(session_id)
 
-            self.delete_everything()
+            request.session['reader_form'] = form.cleaned_data
+
             query = self.prepare_query(request)
-            print(query)
             if query["status"]:
                 es_data = []
                 for entry in self.scrolling(query=query["body"]):
                     es_data.append(entry)
-                print(es_data)
-                data = self.process_data(es_data=es_data)
+                data = self.save_data(es_data=es_data, session_id=session_id)
             else:
                 data = query
-
+            print(es_data)
             data['reader_form'] = form.cleaned_data
-            data['form'] = form
+            # data['form'] = form
             data['submitted'] = True
-            print(data)
-            # return JsonResponse(data)
+
             return render(request, self.template_name, data)
 
         return render(request, self.template_name, {'form': form})
@@ -184,20 +188,42 @@ class QueryES(View):
         return data
 
     @track_error
-    def process_data(self, es_data):
+    def save_data(self, es_data, session_id):
+        """
+        Save error logs data from ES to Django model Errors
+        :param es_data:
+        :param session_id:
+        :return:
+        """
         data = {}
         for item in es_data:
             m = Errors.objects.create(pandaid = item['pandaid'],
                                       modificationtime = item['starttime'],
                                       error_type = self.error_type,
                                       error_code = item[self.error_type+'code'],
-                                      error_message = item[self.error_type+'diag'])
+                                      error_message = item[self.error_type+'diag'],
+                                      session_id = session_id)
             m.save()
-            data["es_data"] = [entry for entry in Errors.objects.all().values()]
+            data["es_data"] = [entry for entry in Errors.objects.filter(session_id=session_id)
+                .values('pandaid', 'modificationtime', 'error_code', 'error_message')]
         return data
 
-    def delete_everything(self):
-        Errors.objects.all().delete()
+    @track_error
+    def get_data(self, session_id):
+        data = {}
+        data["es_data"] = [entry for entry in Errors.objects.filter(session_id=session_id)
+            .values('pandaid', 'modificationtime', 'error_code', 'error_message')]
+        return data
+
+    def delete_data_for_session(self, session_id):
+        """
+        Delete from Errors model all records for current user session
+        :param session_id:
+        :return:
+        """
+        query = Errors.objects.filter(session_id=session_id)
+        query.delete()
+        # Errors.objects.all().delete()
 
 class DirectESReader(QueryES):
 
@@ -207,13 +233,21 @@ class DirectESReader(QueryES):
             self.lte = request.GET.get('lte', '2019-09-01T05:00:00.000Z')
             self.error_type = request.GET.get('error_type', 'exeerror')
             self.page_size = request.GET.get('page_size', 10000)
-            self.delete_everything()
+
+            request.session['reader_form'] = {'start_date':self.gte,
+                                              'end_date': self.lte,
+                                              'error_type': self.error_type,
+                                              'paghe_size': self.page_size}
+
+            session_id = request.session._SessionBase__session_key
+
+            self.delete_data_for_session(session_id)
             query = self.prepare_query(request)
             if query["status"]:
                 es_data = []
                 for entry in self.scrolling(query=query["body"]):
                     es_data.append(entry)
-                data = self.process_data(es_data=es_data)
+                data = self.save(es_data=es_data,session_id=session_id)
             else:
                 data = query
             return JsonResponse(data)

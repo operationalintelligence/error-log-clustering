@@ -2,7 +2,7 @@ body {
     /*!*font-family: 'Roboto', Georgia, sans-serif !important;*!*/
     /*font-family: 'Lexend Deca', sans-serif !important;*/
     font-family: 'Quicksand', sans-serif !important;
-    font-size: 12px !important;
+    font-size: 14px !important;
 }
 
 h1,h2,h3,h4,h5,h6 {
@@ -13,12 +13,12 @@ h1,h2,h3,h4,h5,h6 {
     margin-top: 15px !important;
 }
 
-.row {
-    flex-wrap: nowrap !important;
-}
+/*.row {*/
+    /*flex-wrap: nowrap !important;*/
+/*}*/
 
 th, td {
-    forn-size: 10px !important;
+    font-size: 13px !important;
 }
 
 input {
