@@ -68,8 +68,6 @@ class QueryES(View):
             if data['status'] == True:
                 data['reader_form'] = request.session.get('reader_form')
                 data['submitted'] = True
-                print(data)
-                print(request.session._SessionBase__session_key)
                 return render(request, self.template_name, data)
             else:
                 return render(request, self.template_name, {'form': self.form_class()})
@@ -77,7 +75,6 @@ class QueryES(View):
             return render(request, self.template_name, {'form': self.form_class()})
 
     def post(self, request, *args, **kwargs):
-        print(request.session.__dict__)
         form = self.form_class(request.POST)
         if request.POST.get("submitted"):
             return render(request, self.template_name, {'form': form})
@@ -99,9 +96,7 @@ class QueryES(View):
                 data = self.save_data(es_data=es_data, session_id=session_id)
             else:
                 data = query
-            print(es_data)
             data['reader_form'] = form.cleaned_data
-            # data['form'] = form
             data['submitted'] = True
 
             return render(request, self.template_name, data)
@@ -223,7 +218,6 @@ class QueryES(View):
         """
         query = Errors.objects.filter(session_id=session_id)
         query.delete()
-        # Errors.objects.all().delete()
 
 class DirectESReader(QueryES):
 
