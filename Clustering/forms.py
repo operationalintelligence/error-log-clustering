@@ -1,5 +1,6 @@
 from django import forms
 
+
 class ClusterizationParams(forms.Form):
     tokenizer = forms.CharField(label='Tokenizer', max_length=100)
     w2v_size = forms.IntegerField(label='Word2Vec Embedding Vector Size')

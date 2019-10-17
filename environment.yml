@@ -1,0 +1,28 @@
+name: error-clustering
+channels:
+  - conda-forge
+  - intel
+  - defaults
+dependencies:
+  - cython=0.29.13
+  - daal4py=2019.4
+  - django=2.2.5
+  - kneed=0.4.2
+  - numba=0.45.1
+  - numpy=1.17.2
+  - pandas=0.25.1
+  - pip=19.2.3
+  - python=3.6.9
+  - requests=2.22.0
+  - scikit-learn=0.21.3
+  - scipy=1.3.1
+  - elasticsearch==7.0.4
+  - pip:
+    - kmodes==0.10.1
+    - dask==1.1.4
+    - editdistance==0.5.3
+    - fuzzywuzzy==0.17.0
+    - gensim==3.8.0
+    - nltk==3.4.5
+    - pyonmttok==1.10.1
+    - matplotlib==3.1.1

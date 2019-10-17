@@ -67,14 +67,11 @@
         $(document).ready(function() {
             var data = {{ clustered|safe }};
             var statistics = {{ statistics|safe }};
-            console.log(data);
-            console.log(statistics);
             var cluster_table = $('#cluster-results').DataTable({});
             var statistics_values = [];
             for (var key in statistics) {
                 statistics_values.push(Object.values(statistics[key]));
             }
-            console.log(statistics_values);
             var statistics_table = $('#statistics').DataTable({
                 "data": statistics_values
             });
@@ -96,7 +93,7 @@
                     var cluster_id = event.target.innerHTML;
                     var current_cluster = event.target.error_logs[cluster_id];
                     for (var i in current_cluster) {
-                        var list = []
+                        var list = [];
                         for (var key in current_cluster[i])
                             list.push(current_cluster[i][key]);
                         cluster_table.row.add(list)

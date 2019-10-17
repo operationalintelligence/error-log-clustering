@@ -11,7 +11,7 @@
                    class="form-control form-control-sm flatpickr flatpickr-input active"
                    type="text"
                    readonly="readonly"
-                   placeholder="{{ reader_form.start_date }}">
+                   placeholder="{{ settings.start_date }}">
         </div>
         <div class="form-group-sm">
             <label for="ends_with">Ends with:</label>
@@ -20,7 +20,7 @@
                    class="form-control form-control-sm flatpickr flatpickr-input active"
                    type="text"
                    readonly="readonly"
-                   placeholder="{{ reader_form.end_date }}">
+                   placeholder="{{ settings.end_date }}">
         </div>
         <div class="form-group-sm">
             <label for="error_type">Error type:</label>
@@ -38,8 +38,7 @@
             <input name="page_size"
                    class="form-control form-control-sm"
                    type="text"
-                   placeholder="{{ reader_form.page_size }}">
-            </input>
+                   placeholder="{{ settings.page_size }}">
         </div>
           <br/>
           <br/>
@@ -47,7 +46,7 @@
        </form>
             <script>
                 $(document).ready(function() {
-                    $("#error_type").val("{{ reader_form.error_type }}").change();
+                    $("#error_type").val("{{ settings.error_type }}").change();
                     $('#starts_from').flatpickr({
                         enableTime: true,
                         nocalendar: true,
@@ -69,12 +68,11 @@
         <script>
         $(document).ready(function() {
             var data = {{ es_data|safe }};
-            console.log(data);
             function getColumns(){
               for(var i = 0; i < data.length; i++){
                 let columnsArray = [];
                 var keys = Object.keys(data[i]);
-                for(k in Object.keys(data[i])){
+                for(var k in Object.keys(data[i])){
                   if(data[i].hasOwnProperty(keys[k])){
                     columnsArray.push({
                         "data":keys[k]
