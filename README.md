@@ -8,6 +8,7 @@ Web-service mode:
 -------------------
 data.json
 
+```
 {"source": "ES",
 	"query_settings": {
 		"start_date": "01.10.2019T00:00:000Z",
@@ -24,9 +25,11 @@ data.json
 		"tokenize": "nltk"
 	}
 }
-
+```
+CURL STRING:
+```
 curl -H "Accept: application/json" -H "Content-Type: application/json" -X POST http://localhost:8000/cluster_api/ -d "@data.json"
-
+```
 
 ## Configuration
 To configure ElasticSearch you need to drop config file (*config.ini*) to **/** directory with following structure:
