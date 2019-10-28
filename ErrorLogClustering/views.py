@@ -13,14 +13,46 @@ def index(request):
 
 @csrf_exempt
 def api(request):
+    data = {}
     if request.method == 'POST':
-        data = {}
-        request_params = json.loads(request.body)
-        read = reader.ESReader(dict(request_params['query_settings']))
-        df = read.execute()
-        cluster = cluster_pipeline.Cluster(df, 'INDEX', request_params['cluster_settings'],
-                                           request_params['query_settings'])
-        clustered_df = cluster.process()
-        data['clustered_df'] = clustered_df
+        try:
+            req = json.loads(request.body)
+            mode = req.get('mode')
+            stat = req.get('calculate_statistics')
+
+            try:
+
+                read = reader.ESReader(req.get('es_query'))
+                df = read.execute()
+
+                if req['query_results'] == True:
+                    data['es_results'] = read.es_results
+
+                try:
+
+                    cluster = cluster_pipeline.Cluster(df,
+                                                       mode,
+                                                       req['cluster_settings'],
+                                                       req['query_settings'])
+                    clustered_df = cluster.process()
+
+                    if stat and mode == 'ALL':
+                        statistics = cluster.statistics(clustered_df)
+                        data['statistics'] = statistics
+                    data['clustered_df'] = clustered_df
+                    data['timings'] = cluster.timings
+                    data['number_of_records'] = read.size
+
+                except Exception as e:
+
+                    data['error'] = str(e)
+
+            except Exception as e:
+
+                data['error'] = str(e)
+
+        except Exception as e:
+
+            data['error'] = str(e)
 
     return JsonResponse(data, safe=False)

@@ -12,14 +12,16 @@ class ESReader(object):
     else:
         es_connection = Elasticsearch(hosts=ES_HOSTS)
 
-    def __init__(self, _dict):
-        self.__dict__.update(_dict)
+    def __init__(self, query):
+        self.es_query = query
+        self.size = 0
 
     def execute(self):
-        query = self.prepare_query()
         data = []
-        for entry in self.scrolling(query):
+        for entry in self.scrolling(self.es_query):
             data.append(entry)
+        self.es_results = data
+        self.size = len(data)
         return pd.DataFrame(data)
 
     def prepare_query(self):
