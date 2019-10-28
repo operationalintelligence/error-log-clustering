@@ -1,0 +1,16 @@
+{"source": "ES",
+	"query_settings": {
+		"start_date": "2019-10-01T09:00:00.000Z",
+		"end_date": "2019-10-01T10:30:00.000Z",
+		"page_size": 1000,
+		"index": "pandaid",
+		"target": "exeerrordiag",
+		"columns": ["pandaid", "exeerrorcode", "exeerrordiag", "starttime"]
+	},
+	"cluster_settings": {
+		"w2v_size": 300,
+		"w2v_window": 10,
+		"min_samples": 1,
+		"tokenizer": "nltk"
+	}
+}

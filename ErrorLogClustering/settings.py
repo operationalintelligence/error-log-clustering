@@ -31,7 +31,7 @@ print("config:", config)
 SECRET_KEY = config.get("SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = config.get("ALLOWED_HOSTS").split(",")
 print("Allowed hosts:", ALLOWED_HOSTS)
@@ -51,8 +51,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'ESReader.apps.ESReaderConfig',
-    'Clustering.apps.ClusteringConfig'
 ]
 
 MIDDLEWARE = [
