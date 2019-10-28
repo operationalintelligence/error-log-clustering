@@ -15,13 +15,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path, include
-from .views import main
+from .views import index, api
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('read_es/', include('ESReader.urls')),
-    path('cluster/', include('Clustering.urls')),
-    # path('', main),
-    path('', main, name="main"),
-    # path('reader_form', reader_form, name='reader_form')
+    path('cluster_api/', api, name="api"),
+    path('', index, name="index"),
 ]
