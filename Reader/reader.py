@@ -24,33 +24,6 @@ class ESReader(object):
         self.size = len(data)
         return pd.DataFrame(data)
 
-    def prepare_query(self):
-        query = {
-                'size': self.page_size,
-                '_source': self.columns,
-                'query':{
-                    'bool': {
-                        'must': [
-                            {
-                                "exists": {
-                                    "field": self.target
-                                }
-                            },
-                            {'term': {'jobstatus': 'failed'}},
-                            {
-                                'range': {
-                                    'starttime': {
-                                        'gte': self.start_date,
-                                        'lte': self.end_date
-                                    }
-                                }
-                            }
-                        ]
-                    }
-                }
-            }
-        return query
-
     def scrolling(self, query):
         is_first = True
         while True:
