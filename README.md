@@ -78,18 +78,18 @@ curl -H "Accept: application/json" -H "Content-Type: application/json" -X POST h
 Query string parameters:
 
 - es_query - arbitrary ElasticSearch query, that must contain (at least) field with error messages
-(without NaNs), and field with unique ID (in the case of ES@Chicago/jobs_archive is can be 'pandaid', 'exeerrordiag')
+(without NaNs), and field with unique ID (in the case of `ES@Chicago/jobs_archive` is can be `'pandaid', 'exeerrordiag'`)
 
 - cluster_settings:
-   -- w2v_size - number of dimensions for vector
-   -- w2v_window - size of slicing window for NN algorithms
-   -- min_samples - min. size of cluster
-   -- tokenizer - 'nltk'
+  - `w2v_size` - number of dimensions for vector
+  - `w2v_window` - size of slicing window for NN algorithms
+  - `min_samples` - min. size of cluster
+  - `tokenizer` - 'nltk' | 'pyonmttok'
 
-- index - index field (i.e, 'pandaid')
-- target - field containing error messages (i.e. 'exeerrordiag')
-- query_results - if true, then ES response will be saved as output
-- calculate_statistics - if true, statistics of all clusters will be saved
-- mode - options ALL | INDEX
-   -- if ALL - the results of clusterization will be represented as a dictionary, with lists of all values
-   -- if INDEX - the results will be represetned as a list of IDs for each cluster
+- `index` - index field (i.e, `'pandaid'`)
+- `target` - field containing error messages (i.e. `'exeerrordiag'`)
+- `query_results` - if true, then ES response will be saved as output
+- `calculate_statistics` - if true, statistics of all clusters will be saved
+- `mode` - options ALL | INDEX
+  - if `ALL` - the results of clusterization will be represented as a dictionary, with lists of all values
+  - if `INDEX` - the results will be represetned as a list of IDs for each cluster
