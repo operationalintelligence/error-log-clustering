@@ -40,6 +40,7 @@ def api(request):
                                                        target,
                                                        mode,
                                                        req['cluster_settings'])
+
                     clustered_df = cluster.process()
 
                     if stat and mode == 'ALL':
