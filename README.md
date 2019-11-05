@@ -18,7 +18,7 @@ ALLOWED_HOSTS:*
 ```
 ## Requirements
 ```
-python 3.7
+python >= 3.6
 ClusterLogs==0.0.3
 Django==2.2.6
 elasticsearch==7.0.5
@@ -36,7 +36,7 @@ scipy==1.2.1
 
 Web-service mode:
 -------------------
-data.json
+`data.json` file with the default (recommended) settings
 
 ```
 {
@@ -70,7 +70,8 @@ data.json
 	"target": "exeerrordiag",
 	"query_results": false,
 	"calculate_statistics": true,
-	"mode": "INDEX"
+	"mode": "INDEX",
+	"timings": true
 }
 ```
 CURL STRING:
@@ -81,18 +82,20 @@ curl -H "Accept: application/json" -H "Content-Type: application/json" -X POST h
 Query string parameters:
 
 - es_query - arbitrary ElasticSearch query, that must contain (at least) field with error messages
-(without NaNs), and field with unique ID (in the case of `ES@Chicago/jobs_archive` is can be `'pandaid', 'exeerrordiag'`)
+(without NaNs), and field with unique ID (in the case of `ES@Chicago/jobs_archive` is can be `'exeerrordiag','pandaid'`)
 
 - cluster_settings:
-  - `w2v_size` - number of dimensions for vector
-  - `w2v_window` - size of slicing window for NN algorithms
-  - `min_samples` - min. size of cluster
-  - `tokenizer` - 'nltk' | 'pyonmttok'
+  - `w2v_size` - number of dimensions for vector (in most cases recommended 100-300)
+  - `w2v_window` - size of slicing window for NN algorithms (recommended >= 5)
+  - `min_samples` - min. size of cluster (recommended 1)
+  - `tokenizer` - 'nltk' | 'pyonmttok' (recommended 'nltk')
 
 - `index` - index field (i.e, `'pandaid'`)
 - `target` - field containing error messages (i.e. `'exeerrordiag'`)
-- `query_results` - if true, then ES response will be saved as output
-- `calculate_statistics` - if true, statistics of all clusters will be saved
+- `query_results` - if true, then ES response will be printed in the output JSON
+- `calculate_statistics` - if true, statistics of all clusters will be printed
 - `mode` - options ALL | INDEX
   - if `ALL` - the results of clusterization will be represented as a dictionary, with lists of all values
-  - if `INDEX` - the results will be represetned as a list of IDs for each cluster
+  - if `INDEX` - a list of IDs for each cluster
+  - if `TARGET` - a list of error messages for each cluster
+- `timings` - output timings for each stage of clusterization pipeline

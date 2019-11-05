@@ -21,6 +21,7 @@ def api(request):
             target = req.get('target')
             mode = req.get('mode')
             stat = req.get('calculate_statistics')
+            timings = req.get('timings')
 
             try:
 
@@ -38,17 +39,18 @@ def api(request):
                     cluster = cluster_pipeline.Cluster(df,
                                                        index,
                                                        target,
-                                                       mode,
                                                        req['cluster_settings'])
 
-                    clustered_df = cluster.process()
+                    cluster.process()
 
-                    if stat and mode == 'ALL':
-                        statistics = cluster.statistics(clustered_df)
-                        data['statistics'] = statistics
-                    data['clustered_df'] = clustered_df
+                    if stat:
+                        data['statistics'] = cluster.statistics()
+
+                    if timings:
+                        data['timings'] = cluster.timings
+
+                    data['clustered_df'] = cluster.clustered_output(mode)
                     data['clusterization_parameters'] = req.get('cluster_settings')
-                    data['timings'] = cluster.timings
 
                 except Exception as e:
 
