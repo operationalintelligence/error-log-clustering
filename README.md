@@ -5,7 +5,9 @@ The tool is built on Django and ElasticSearch as data source.
 It provides abilities for error logs clusterization using web-interface or as a service.
 
 ## Configuration
-To configure ElasticSearch you need to drop config file (*config.ini*) to **/** directory with following structure:
+
+To configure ElasticSearch you need to create config file (*config.ini*) in **config/** directory.
+In *config.ini* specify secret key, connection settings to the ElasticSearch instance, and index to work with.
 ```
 SECRET_KEY:&y&s3(9b0hvuxi)&ab80grj*^lpd@5665xnu&e+kqq=%+&wn^6
 ES_HOSTS:http://localhost:9200/
@@ -16,6 +18,7 @@ ALLOWED_HOSTS:*
 ```
 ## Requirements
 ```
+python 3.7
 ClusterLogs==0.0.3
 Django==2.2.6
 elasticsearch==7.0.5
