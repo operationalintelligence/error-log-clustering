@@ -3,7 +3,7 @@ import json
 from django.http import JsonResponse
 from django.shortcuts import render
 from django.views.decorators.csrf import csrf_exempt
-from log_cluster import cluster_pipeline
+from clusterlogs import pipeline
 
 from Reader import reader
 
@@ -22,10 +22,12 @@ def api(request):
             mode = req.get('mode')
             stat = req.get('calculate_statistics')
             timings = req.get('timings')
+            query = req.get('es_query')
+            cluster_settings = req.get('cluster_settings')
 
             try:
 
-                read_handler = reader.ESReader(req.get('es_query'))
+                read_handler = reader.ESReader(query, index)
                 df = read_handler.execute()
 
                 data['query'] = read_handler.es_query
@@ -36,10 +38,7 @@ def api(request):
 
                 try:
 
-                    cluster = cluster_pipeline.Cluster(df,
-                                                       index,
-                                                       target,
-                                                       req['cluster_settings'])
+                    cluster = pipeline.ml_clustering(df, target, cluster_settings)
 
                     cluster.process()
 
@@ -50,7 +49,7 @@ def api(request):
                         data['timings'] = cluster.timings
 
                     data['clustered_df'] = cluster.clustered_output(mode)
-                    data['clusterization_parameters'] = req.get('cluster_settings')
+                    data['clusterization_parameters'] = cluster_settings
 
                 except Exception as e:
 

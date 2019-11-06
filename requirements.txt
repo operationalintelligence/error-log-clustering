@@ -1,4 +1,4 @@
-ClusterLogs==1.0.0
+clusterlogs
 Django==2.2.6
 elasticsearch==7.0.5
 fuzzywuzzy==0.17.0

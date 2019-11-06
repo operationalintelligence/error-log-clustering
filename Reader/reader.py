@@ -12,9 +12,10 @@ class ESReader(object):
     else:
         es_connection = Elasticsearch(hosts=ES_HOSTS)
 
-    def __init__(self, query):
+    def __init__(self, query, index):
         self.es_query = query
         self.size = 0
+        self.index = index
 
     def execute(self):
         data = []
@@ -22,7 +23,7 @@ class ESReader(object):
             data.append(entry)
         self.es_results = data
         self.size = len(data)
-        return pd.DataFrame(data)
+        return pd.DataFrame(data).set_index(self.index)
 
     def scrolling(self, query):
         is_first = True
