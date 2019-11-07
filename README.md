@@ -4,18 +4,6 @@
 The tool is built on Django and ElasticSearch as data source.
 It provides abilities for error logs clusterization using web-interface or as a service.
 
-## Configuration
-
-To configure ElasticSearch you need to create config file (*config.ini*) in **config/** directory.
-In *config.ini* specify secret key, connection settings to the ElasticSearch instance, and index to work with.
-```
-SECRET_KEY:&y&s3(9b0hvuxi)&ab80grj*^lpd@5665xnu&e+kqq=%+&wn^6
-ES_HOSTS:http://localhost:9200/
-ES_USER:admin
-ES_PASSWORD:123456
-ES_INDEX:my-es-index
-ALLOWED_HOSTS:*
-```
 ## Requirements
 ```
 python >= 3.6
@@ -34,9 +22,33 @@ scikit-learn==0.20.3
 scipy==1.2.1
 ```
 
+## Installation from Docker
+1) run docker (this command is automatically downloads (pulls) image that doesn't exist locally, creates a container and starts it)
+```
+docker run -p 80:80 -it operationalintelligence/error-log-clustering bash
+```
+2) in docker bash - set configuration in (*config.ini*) file in /config directory:
+```
+vi config/config.ini
+```
+In *config.ini* specify secret key, connection settings to the ElasticSearch instance, and index to work with.
+```
+SECRET_KEY:&y&s3(9b0hvuxi)&ab80grj*^lpd@5665xnu&e+kqq=%+&wn^6
+ES_HOSTS:http://localhost:9200/
+ES_USER:admin
+ES_PASSWORD:123456
+ES_INDEX:my-es-index
+ALLOWED_HOSTS:*
+```
+Save file and close it (:wq).
+3) Start Django server
+```
+./run.sh
+```
+
 Web-service mode:
 -------------------
-`data.json` file with the default (recommended) settings
+1) On a local machine create file with the default (recommended) settings
 
 ```
 {
@@ -74,7 +86,7 @@ Web-service mode:
 	"timings": true
 }
 ```
-CURL STRING:
+2) Execute CURL request in a new terminal window:
 ```
 curl -H "Accept: application/json" -H "Content-Type: application/json" -X POST http://localhost:8000/cluster_api/ -d "@data.json"
 ```
