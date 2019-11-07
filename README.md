@@ -41,10 +41,20 @@ ES_INDEX:my-es-index
 ALLOWED_HOSTS:*
 ```
 Save file and close it (:wq).
+
 3) Start Django server
 ```
 ./run.sh
 ```
+
+If everything's OK, the following message will appear in terminal:
+```
+Django version 2.2.6, using settings 'ErrorLogClustering.settings'
+Starting development server at http://0.0.0.0:80/
+Quit the server with CONTROL-C.
+```
+
+Now Django Server is running and open for REST API requests.
 
 Web-service mode:
 -------------------
