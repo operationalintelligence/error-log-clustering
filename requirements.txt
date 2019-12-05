@@ -1,5 +1,5 @@
 clusterlogs
-Django==2.2.6
+Django==2.2.8
 elasticsearch==7.0.5
 fuzzywuzzy==0.17.0
 gensim==3.8.1
