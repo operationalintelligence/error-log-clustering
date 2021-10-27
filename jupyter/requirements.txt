@@ -1,5 +1,5 @@
 daal4py==2019.5
-dask==1.1.4
+dask==2021.10.0
 editdistance==0.5.3
 fuzzywuzzy==0.17.0
 gensim==3.8.0
