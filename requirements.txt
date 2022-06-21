@@ -6,7 +6,7 @@ gensim==3.8.1
 kneed==0.5.0
 matplotlib==3.0.3
 nltk==3.4.5
-numpy==1.16.2
+numpy==1.22.0
 pandas==0.24.2
 pyonmttok==1.10.1
 scikit-learn==0.20.3
